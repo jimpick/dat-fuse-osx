@@ -96,7 +96,15 @@ try {
   // do nothing
 }
 
-unmount(mnt, mount)
+console.log('Updating metadata', archive.metadata.length)
+archive.metadata.update(() => {
+  console.log('Jim metadata updated', archive.metadata.length)
+  unmount(mnt, mount)
+})
+archive.metadata.on('error', err => {
+  console.error('Metadata error', err)
+})
+
 
 function mount () {
   fuse.mount(mnt, {
