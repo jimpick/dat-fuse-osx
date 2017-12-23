@@ -3,3 +3,4 @@ node_modules
 archive
 mnt
 my-dir
+.DS_Store

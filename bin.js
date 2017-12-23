@@ -77,7 +77,8 @@ if (argv.stats) onstats()
 
 archive.on('ready', function () {
   console.log('Jim ready')
-  const sw = hyperdiscovery(archive, {live: true})
+  // const sw = hyperdiscovery(archive, {live: true})
+  const sw = hyperdiscovery(archive)
 	sw.on('connection', function (peer, type) {
 		// console.log('got', peer, type) 
 		console.log('connected to', sw.connections.length, 'peers')
@@ -99,8 +100,23 @@ try {
 console.log('Updating metadata', archive.metadata.length)
 archive.metadata.update(() => {
   console.log('Jim metadata updated', archive.metadata.length)
-  unmount(mnt, mount)
 })
+let started = false
+setInterval(() => {
+  if (started) return
+  console.log('Jim feed length', archive.metadata.length)
+  if (archive.metadata.length) {
+    started = true
+    archive.readdir('/', (err, files) => {
+      if (err) {
+        console.error('readdir error', err)
+        return
+      }
+      console.log(files)
+      unmount(mnt, mount)
+    })
+  }
+}, 1000)
 archive.metadata.on('error', err => {
   console.error('Metadata error', err)
 })
@@ -112,7 +128,7 @@ function mount () {
       console.log('Jim readdir', path)
       if (isMirrored(path)) fs.readdir(mirrored + path, done)
       else {
-        console.log('Jim2')
+        console.log('Jim2', archive.metadata.length)
         archive.readdir(path, done)
       }
 
@@ -132,6 +148,10 @@ function mount () {
 
       function done (err, st) {
         if (err) return cb(toErrno(err))
+        console.log('Jim', st)
+        st.mode = st.mode | 0777
+        st.uid = 501
+        st.gid = 20
         cb(null, st)
       }
     },
@@ -218,7 +238,8 @@ function mount () {
 }
 
 function isMirrored (name) {
-  return /\/\./.test(name) || !/\.img$/.test(name)
+  return false
+  // return /\/\./.test(name) || !/\.img$/.test(name)
 }
 
 function toErrno (err) {
